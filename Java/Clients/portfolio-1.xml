@@ -1,0 +1,5 @@
+<!-- A tech-heavy portfolio -->
+<portfolio>
+    <stock symbol="MSFT">500</stock>
+    <stock symbol="AMZN">500</stock>
+</portfolio>
