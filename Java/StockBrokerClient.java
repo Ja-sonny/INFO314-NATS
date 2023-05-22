@@ -4,18 +4,22 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.StringReader;
-import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
+import java.util.*;
 
 public class StockBrokerClient {
     private String portfolio;
     private String strategy;
     private ArrayList<String> subs = new ArrayList<String>();
+    private static Map<String, String> map;
 
     public StockBrokerClient(String pfile, String sfile){
+        map = new HashMap<String, String>();
         try {
             String filename = "Clients/" + pfile;
             File file = new File(filename);
@@ -32,7 +36,7 @@ public class StockBrokerClient {
             String l;
             String strat = "";
             while ((l = br2.readLine()) != null) {
-                strat += line;
+                strat += l;
             }
             this.portfolio = port;
             this.strategy = strat;
@@ -64,12 +68,26 @@ public class StockBrokerClient {
             }
             String[] stock = new String[subs.size()];
             for(int i = 0; i < subs.size(); i++) {
-                stock[i] = temp[i] + ", " + root.getElementsByTagName("stock").item(i).getTextContent();
+                System.out.println(temp[i]);
+                 map.put(temp[i], root.getElementsByTagName("stock").item(i).getTextContent());
             }
-            
-            for(int i = 0; i < stock.length; i++){
-                System.out.println(stock[i]);
-            }
+            System.out.println(map.get("MSFT"));
+
+            Connection nc = Nats.connect("nats://localhost:4222");
+            Dispatcher dis = nc.createDispatcher((msg)-> {
+                try{ 
+                    String response = new String(msg.getData());
+                    Document di = builder.parse(new InputSource(new StringReader(response)));
+                    Element ri = di.getDocumentElement();
+                    String name = ri.getElementsByTagName("name").item(0).getTextContent();
+                    String price = ri.getElementsByTagName("adjustedPrice").item(0).getTextContent();
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+               
+
+            });
+
         } catch (Exception e) {
             System.out.println(e);
         }
